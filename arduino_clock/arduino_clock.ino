@@ -70,6 +70,8 @@ void setup () {
     identifier=0x9328;
   }
   tft.begin(identifier);
+
+  //reset_eth();
   
   // Ethernet initalization
   if (ether.begin(sizeof Ethernet::buffer, mac) == 0) {
@@ -289,3 +291,10 @@ unsigned long getNTPTime() {
   return 0;
 }
 
+void reset_eth() {
+  pinMode(ETH_RS_PIN, OUTPUT); // this lets you pull the pin low.
+  digitalWrite(ETH_RS_PIN, LOW); // this resets the ENC28J60 hardware
+  delay(100); // this makes sure the ENC28j60 resets OK.
+  digitalWrite(ETH_RS_PIN, HIGH); // this makes for a fast rise pulse;
+  pinMode(ETH_RS_PIN, INPUT); // this releases the pin,(puts it in high impedance); lets the pullup in the board do its job.
+}
