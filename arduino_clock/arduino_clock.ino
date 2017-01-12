@@ -40,6 +40,9 @@
 #define WHITE   0xFFFF
 #define GREY    0x9CD3
 
+// Ethernet module reset pin
+#define ETH_RS_PIN 49
+
 // Make a TFT object
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
@@ -53,7 +56,7 @@ TimeChangeRule usEST = {"EST", First, Sun, Nov, 2, -300};   //UTC - 5 hours
 Timezone usEastern(usEDT, usEST);
 
 byte s_minute = 0;
-byte r_minute = -1;
+int8_t r_minute = -1;
 bool error = false;
 byte error_code = 0b000000;
 const unsigned long seventy_years = 2208988800UL;
@@ -210,11 +213,11 @@ void tft_time(void) {
 void loop () {
   ether.packetLoop(ether.packetReceive());
 
-  if ((hour() == 1) && isAM() && (r_minute != -1)) {
+  if ((hour() == 1) && (r_minute != -1)) {
     r_minute = -1;
   }
   
-  if ((hour() == 12) && isAM()) {
+  if (hour() == 0) {
     /*
      * r_minute and random time selection
      * 
@@ -230,11 +233,23 @@ void loop () {
      */
     if (r_minute == -1) {
       r_minute = random(60);
+      Serial.print("r_minute = ");
+      Serial.println(r_minute);
     }
     if (minute() == r_minute) {
       r_minute = -2;
+      byte o_hour = hour();
+      byte o_minute = minute();
+      byte o_second = second();
       setTime(getNTPTime());
       printTime();
+      Serial.print("diff h = ");
+      Serial.print(hour() - o_hour);
+      Serial.print(", diff m = ");
+      Serial.print(minute() - o_minute);
+      Serial.print(", diff s = ");
+      Serial.print(second() - o_second);
+      Serial.println();
     }
   }
 
