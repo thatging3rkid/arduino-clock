@@ -213,11 +213,11 @@ void tft_time(void) {
 void loop () {
   ether.packetLoop(ether.packetReceive());
 
-  if ((hour() == 1) && (r_minute != -1)) {
+  if ((hourFormat12() == 1) && (r_minute != -1)) {
     r_minute = -1;
   }
   
-  if (hour() == 0) {
+  if (hourFormat12() == 12) {
     /*
      * r_minute and random time selection
      * 
