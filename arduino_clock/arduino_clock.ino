@@ -14,9 +14,7 @@
 #include <TimeLib.h>        // http://www.arduino.cc/playground/Code/Time
 #include <EtherCard.h>      // https://github.com/jcw/ethercard
 #include <Timezone.h>       // https://github.com/JChristensen/Timezone
-
 #include <gfxfont.h>
-
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_TFTLCD.h> // Hardware-specific library
 
@@ -39,9 +37,6 @@
 #define YELLOW  0xFFE0
 #define WHITE   0xFFFF
 #define GREY    0x9CD3
-
-// Ethernet module reset pin
-#define ETH_RS_PIN 49
 
 // Make a TFT object
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
@@ -73,15 +68,17 @@ void setup () {
     identifier=0x9328;
   }
   tft.begin(identifier);
-
+  
   //reset_eth();
   
   // Ethernet initalization
   if (ether.begin(sizeof Ethernet::buffer, mac) == 0) {
-    Serial.println( "Failed to access Ethernet controller");
+    Serial.println("Ethernet setup failed");
+    error = true;
   }
   if (!ether.dhcpSetup()) {
     Serial.println("DHCP failed");
+    error = true;
   }
 
   // Print out DHCP info
@@ -93,7 +90,7 @@ void setup () {
   setTime(getNTPTime());
   
   // Set the random seed 
-  randomSeed(analogRead(A15)); // set to an unconnected analog pin
+  randomSeed(analogRead(A5)); // set to an unconnected analog pin
     
   // Print the time to the screen
   tft_time();
@@ -102,7 +99,7 @@ void setup () {
   printTime();
 
   // Print out that initalization is complete
-  Serial.println("Initalization is complete!");
+  Serial.println("Setup complete!");
 }
 
 void tft_time(void) {
@@ -282,12 +279,11 @@ void printDigits(int digits){
   Serial.print(digits);
 }
 
-uint8_t ntpServer[] = {216, 239, 35, 0}; // time.google.com
-
 unsigned long getNTPTime() {
+  const uint8_t ntpServer[] = {216, 239, 35, 0}; // time.google.com
   unsigned long timeFromNTP;
-  int i = 40; // Number of max attempts
-  Serial.println("NTP request sent");
+  byte i = 40; // Number of max attempts
+  Serial.println("NTP sent");
   while(i > 0) {
     ether.ntpRequest(ntpServer, 123);
     Serial.print("."); //Each dot is a NTP request
@@ -302,14 +298,7 @@ unsigned long getNTPTime() {
     i--;
   }
   Serial.println();
-  Serial.println("NTP reply failed");
-  return 0;
-}
-
-void reset_eth() {
-  pinMode(ETH_RS_PIN, OUTPUT); // this lets you pull the pin low.
-  digitalWrite(ETH_RS_PIN, LOW); // this resets the ENC28J60 hardware
-  delay(100); // this makes sure the ENC28j60 resets OK.
-  digitalWrite(ETH_RS_PIN, HIGH); // this makes for a fast rise pulse;
-  pinMode(ETH_RS_PIN, INPUT); // this releases the pin,(puts it in high impedance); lets the pullup in the board do its job.
+  Serial.println("NTP failed");
+  error = true;
+  return 1;
 }
