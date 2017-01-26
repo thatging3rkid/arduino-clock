@@ -81,6 +81,11 @@ void setup () {
     error = true;
   }
 
+  if (!ether.dnsLookup("time.google.com")) {
+    Serial.println("DNS failed!");
+    error = true;
+  }
+
   // Print out DHCP info
   ether.printIp("Allocated IP: ", ether.myip);
   ether.printIp("Gateway IP  : ", ether.gwip);  
@@ -238,7 +243,10 @@ void loop () {
       byte o_hour = hour();
       byte o_minute = minute();
       byte o_second = second();
-      setTime(getNTPTime());
+      uint64_t current_time = getNTPTime();
+      if (current_time != 1) { 
+        setTime(current_time);
+      }
       printTime();
       Serial.print("diff h = ");
       Serial.print(hour() - o_hour);
@@ -280,15 +288,16 @@ void printDigits(int digits){
 }
 
 unsigned long getNTPTime() {
-  const uint8_t ntpServer[] = {216, 239, 35, 0}; // time.google.com
+  const uint8_t ntpServer[] = {50, 18, 45, 94}; // time.google.com
   unsigned long timeFromNTP;
-  byte i = 40; // Number of max attempts
+  byte i = 65; // Number of max attempts
   Serial.println("NTP sent");
   while(i > 0) {
     ether.ntpRequest(ntpServer, 123);
     Serial.print("."); //Each dot is a NTP request
     word length = ether.packetReceive();
-    ether.packetLoop(length);
+    //ether.packetLoop(length);
+    Serial.print(length);
     if(length > 0 && ether.ntpProcessAnswer(&timeFromNTP, 123)) {
       Serial.println();
       Serial.println("NTP reply received");
